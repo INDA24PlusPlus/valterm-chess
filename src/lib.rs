@@ -54,7 +54,7 @@ impl Game {
 
                 if c.is_digit(10) {
                     // Digit
-                    x += c.to_digit(10).unwrap() as u8; // Should never fail so why not unwrap :)
+                    x += c.to_digit(10).unwrap() as i8; // Should never fail so why not unwrap :)
                     continue;
                 }
 
@@ -137,8 +137,8 @@ pub struct Piece {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Position {
-    x: u8,
-    y: u8,
+    x: i8,
+    y: i8,
 }
 
 impl ops::Add<Position> for Position {
@@ -152,10 +152,10 @@ impl ops::Add<Position> for Position {
     }
 }
 
-impl ops::Add<(u8, u8)> for Position {
+impl ops::Add<(i8, i8)> for Position {
     type Output = Position;
 
-    fn add(self, rhs: (u8, u8)) -> Position {
+    fn add(self, rhs: (i8, i8)) -> Position {
         Position {
             x: self.x + rhs.0,
             y: self.y + rhs.1,
@@ -163,10 +163,10 @@ impl ops::Add<(u8, u8)> for Position {
     }
 }
 
-impl ops::Sub<(u8, u8)> for Position {
+impl ops::Sub<(i8, i8)> for Position {
     type Output = Position;
 
-    fn sub(self, rhs: (u8, u8)) -> Position {
+    fn sub(self, rhs: (i8, i8)) -> Position {
         Position {
             x: self.x - rhs.0,
             y: self.y - rhs.1,
@@ -206,8 +206,8 @@ mod tests {
 
                 if piece.position
                     != (Position {
-                        x: x as u8,
-                        y: y as u8,
+                        x: x as i8,
+                        y: y as i8,
                     })
                 {
                     return false;

@@ -3,7 +3,7 @@ use crate::{Color, Game, Piece, Position};
 type Moves = Vec<Position>;
 
 pub fn check_bounds(position: Position) -> bool {
-    if position.x > 8 || position.y > 8 {
+    if position.x > 8 || position.y > 8 || position.x < 0 || position.y < 0 {
         return false;
     }
     true
