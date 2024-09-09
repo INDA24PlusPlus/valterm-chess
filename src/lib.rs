@@ -41,28 +41,27 @@ impl Game {
                 let mut piece = Piece {
                     color: Color::White,
                     piece_type: PieceType::Pawn,
-                    x: x,
-                    y: y,
+                    position: Position {x, y},
                 };
 
-                if c >= 'a' && c <= 'z' {
+                if c.is_ascii_lowercase() {
                     // Lowercase letter
                     piece.color = Color::Black;
                 }
 
-                if c >= '0' && c <= '9' {
+                if c.is_digit(10) {
                     // Digit
                     x += c.to_digit(10).unwrap() as u8; // Should never fail so why not unwrap :)
                     continue;
                 }
 
-                match c {
-                    'p' | 'P' => piece.piece_type = PieceType::Pawn,
-                    'n' | 'N' => piece.piece_type = PieceType::Knight,
-                    'b' | 'B' => piece.piece_type = PieceType::Bishop,
-                    'r' | 'R' => piece.piece_type = PieceType::Rook,
-                    'q' | 'Q' => piece.piece_type = PieceType::Queen,
-                    'k' | 'K' => piece.piece_type = PieceType::King,
+                match c.to_ascii_lowercase() {
+                    'p' => piece.piece_type = PieceType::Pawn,
+                    'n' => piece.piece_type = PieceType::Knight,
+                    'b' => piece.piece_type = PieceType::Bishop,
+                    'r' => piece.piece_type = PieceType::Rook,
+                    'q' => piece.piece_type = PieceType::Queen,
+                    'k' => piece.piece_type = PieceType::King,
                     _ => panic!("Bruh"),
                 }
 
@@ -90,8 +89,7 @@ impl Game {
                 };
 
                 if self.pieces[x][y].is_some_and(|piece| piece.color == Color::Black) {
-                    // .to_lowercase() returns an iterator. Really..?
-                    c = c.to_lowercase().collect::<Vec<char>>()[0];
+                    c = c.to_ascii_lowercase();
                 }
 
                 print!("{} ", c);
@@ -105,6 +103,11 @@ impl Game {
 pub struct Piece {
     color: Color,
     piece_type: PieceType,
+    position: Position,
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub struct Position {
     x: u8,
     y: u8,
 }
