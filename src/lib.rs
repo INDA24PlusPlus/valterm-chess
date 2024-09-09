@@ -1,5 +1,7 @@
 use std::ops;
 
+use moves::check_bounds;
+
 /*
 Uncertain if 2D-array of Piece objects is the best way to go about representing the board...
 Perhaps switch to some other system?
@@ -8,6 +10,7 @@ pub mod moves;
 
 pub type Board = [[Option<Piece>; 8]; 8];
 
+#[derive(Default)]
 pub struct Game {
     pieces: Board,
 }
@@ -52,7 +55,7 @@ impl Game {
                     piece.color = Color::Black;
                 }
 
-                if c.is_digit(10) {
+                if c.is_ascii_digit() {
                     // Digit
                     x += c.to_digit(10).unwrap() as i8; // Should never fail so why not unwrap :)
                     continue;
@@ -102,6 +105,10 @@ impl Game {
     }
 
     fn force_move(&mut self, from: Position, to: Position) {
+        if !check_bounds(from) || !check_bounds(to) {
+            return;
+        }
+
         let mut piece = match self.pieces[from.x as usize][from.y as usize] {
             Some(piece) => piece,
             None => return,
@@ -121,10 +128,7 @@ impl Game {
     }
 
     pub fn color_at(&self, position: Position) -> Option<Color> {
-        match self.pieces[position.x as usize][position.y as usize] {
-            Some(piece) => Some(piece.color),
-            None => None,
-        }
+        self.pieces[position.x as usize][position.y as usize].map(|piece| piece.color)
     }
 }
 
@@ -139,6 +143,12 @@ pub struct Piece {
 pub struct Position {
     x: i8,
     y: i8,
+}
+
+impl From<(i8, i8)> for Position {
+    fn from(pos: (i8, i8)) -> Position {
+        Position { x: pos.0, y: pos.1 }
+    }
 }
 
 impl ops::Add<Position> for Position {
@@ -192,7 +202,7 @@ pub enum Color {
 
 #[cfg(test)]
 mod tests {
-    use moves::get_pawn_moves;
+    use moves::get_piece_moves;
 
     use super::*;
 
@@ -221,9 +231,10 @@ mod tests {
     fn it_works() {
         let mut game = Game::new();
         game.load_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2");
-        game.force_move(Position { x: (1), y: (6) }, Position { x: (1), y: (2) });
+        game.force_move(Position { x: (1), y: (6) }, Position { x: (1), y: (5) });
         game.print_board();
-        println!("{:?}", get_pawn_moves(&game, game.pieces[0][1].unwrap()));
+
+        println!("{:?}", get_piece_moves(&game, game.pieces[1][0].unwrap()));
         assert!(tests::verify_board(&game))
     }
 }

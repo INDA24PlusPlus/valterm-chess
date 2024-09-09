@@ -1,9 +1,9 @@
-use crate::{Color, Game, Piece, Position};
+use crate::{Color, Game, Piece, PieceType, Position};
 
 type Moves = Vec<Position>;
 
 pub fn check_bounds(position: Position) -> bool {
-    if position.x > 8 || position.y > 8 || position.x < 0 || position.y < 0 {
+    if position.x > 7 || position.y > 7 || position.x < 0 || position.y < 0 {
         return false;
     }
     true
@@ -15,7 +15,15 @@ fn push_if_valid(moves: &mut Moves, position: Position) {
     }
 }
 
-// Returns all possible moves for a certain piece, does not perform extensive checking
+pub fn get_piece_moves(game: &Game, piece: Piece) -> Moves {
+    match piece.piece_type {
+        PieceType::Pawn => get_pawn_moves(game, piece),
+        PieceType::Knight => get_knight_moves(game, piece),
+        _ => panic!("Unimplemented!"),
+    }
+}
+
+// Returns all possible moves for a certain piece, does not perform extensive checking (collisions with own pieces etc)
 pub fn get_pawn_moves(game: &Game, piece: Piece) -> Moves {
     let mut moves: Moves = vec![];
 
@@ -36,7 +44,16 @@ pub fn get_pawn_moves(game: &Game, piece: Piece) -> Moves {
 
     if piece.color == Color::White {
         let left = piece.position + (1, 1);
-        let right = piece.position + (0, 1) - (1, 0);
+        let right = piece.position + (-1, 1);
+        if check_bounds(left) && game.color_at(left).is_some() {
+            moves.push(left);
+        }
+        if check_bounds(right) && game.color_at(right).is_some() {
+            moves.push(right);
+        }
+    } else {
+        let left = piece.position - (1, 1);
+        let right = piece.position - (-1, 1);
         if check_bounds(left) && game.color_at(left).is_some() {
             moves.push(left);
         }
@@ -44,6 +61,21 @@ pub fn get_pawn_moves(game: &Game, piece: Piece) -> Moves {
             moves.push(right);
         }
     }
+
+    moves
+}
+
+pub fn get_knight_moves(_game: &Game, piece: Piece) -> Moves {
+    let mut moves: Moves = vec![];
+
+    push_if_valid(&mut moves, piece.position + (2, 1));
+    push_if_valid(&mut moves, piece.position + (2, -1));
+    push_if_valid(&mut moves, piece.position + (-2, 1));
+    push_if_valid(&mut moves, piece.position + (-2, -1));
+    push_if_valid(&mut moves, piece.position + (1, 2));
+    push_if_valid(&mut moves, piece.position + (1, -2));
+    push_if_valid(&mut moves, piece.position + (-1, 2));
+    push_if_valid(&mut moves, piece.position + (-1, -2));
 
     moves
 }
