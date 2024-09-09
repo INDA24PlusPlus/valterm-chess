@@ -15,6 +15,10 @@ fn push_if_valid(moves: &mut Moves, position: Position) {
     }
 }
 
+fn push_if_valid_check_collision(moves: &mut Moves, piece: Piece, delta: Position) {
+    todo!()
+}
+
 pub fn get_piece_moves(game: &Game, piece: Piece) -> Moves {
     match piece.piece_type {
         PieceType::Pawn => get_pawn_moves(game, piece),
@@ -27,40 +31,55 @@ pub fn get_piece_moves(game: &Game, piece: Piece) -> Moves {
 pub fn get_pawn_moves(game: &Game, piece: Piece) -> Moves {
     let mut moves: Moves = vec![];
 
+    let mut left = piece.position;
+    let mut right = piece.position;
+    let mut forward = piece.position;
+    if piece.color == Color::White {
+        left = left + (1, 1);
+        right = right + (-1, 1);
+        forward = forward + (0, 1);
+    } else {
+        left = left - (1, 1);
+        right = right - (-1, 1);
+        forward = forward - (0, 1);
+    }
+
+    let mut forward_valid = false;
+
+    // Single step forward
+    if check_bounds(forward) && game.color_at(forward).is_none() {
+        moves.push(forward);
+        forward_valid = true;
+    }
+
+    // Sideways capture
+    if check_bounds(left)
+        && game
+            .color_at(left)
+            .is_some_and(|color| color != piece.color)
+    {
+        moves.push(left);
+    }
+    if check_bounds(right)
+        && game
+            .color_at(right)
+            .is_some_and(|color| color != piece.color)
+    {
+        moves.push(right);
+    }
+
     let initial_move = (piece.position.y == 1 && piece.color == Color::White)
         || (piece.position.y == 6 && piece.color == Color::Black);
 
-    match piece.color {
-        Color::White => push_if_valid(&mut moves, piece.position + (0, 1)),
-        Color::Black => push_if_valid(&mut moves, piece.position - (0, 1)),
-    }
-
-    if initial_move {
+    // Double step forward
+    if initial_move && forward_valid {
         match piece.color {
             Color::White => push_if_valid(&mut moves, piece.position + (0, 2)),
             Color::Black => push_if_valid(&mut moves, piece.position - (0, 2)),
         }
     }
 
-    if piece.color == Color::White {
-        let left = piece.position + (1, 1);
-        let right = piece.position + (-1, 1);
-        if check_bounds(left) && game.color_at(left).is_some() {
-            moves.push(left);
-        }
-        if check_bounds(right) && game.color_at(right).is_some() {
-            moves.push(right);
-        }
-    } else {
-        let left = piece.position - (1, 1);
-        let right = piece.position - (-1, 1);
-        if check_bounds(left) && game.color_at(left).is_some() {
-            moves.push(left);
-        }
-        if check_bounds(right) && game.color_at(right).is_some() {
-            moves.push(right);
-        }
-    }
+    // TODO: En passant
 
     moves
 }

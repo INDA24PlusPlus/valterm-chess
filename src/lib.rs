@@ -200,6 +200,17 @@ pub enum Color {
     Black,
 }
 
+impl ops::Not for Color {
+    type Output = Color;
+
+    fn not(self) -> Color {
+        match self {
+            Color::Black => Color::White,
+            Color::White => Color::Black,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use moves::get_piece_moves;
@@ -231,10 +242,10 @@ mod tests {
     fn it_works() {
         let mut game = Game::new();
         game.load_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2");
-        game.force_move(Position { x: (1), y: (6) }, Position { x: (1), y: (5) });
+        game.force_move(Position { x: (6), y: (6) }, Position { x: (6), y: (2) });
         game.print_board();
 
-        println!("{:?}", get_piece_moves(&game, game.pieces[1][0].unwrap()));
+        println!("{:?}", get_piece_moves(&game, game.pieces[5][1].unwrap()));
         assert!(tests::verify_board(&game))
     }
 }
