@@ -75,24 +75,16 @@ pub fn get_pawn_moves(game: &Game, piece: Piece) -> Moves {
     let mut forward_valid = false;
 
     // Single step forward
-    if check_bounds(forward) && game.color_at(forward).is_none() {
+    if get_move_type(game, piece, forward) == MoveType::Regular {
         moves.push(forward);
         forward_valid = true;
     }
 
     // Sideways capture
-    if check_bounds(left)
-        && game
-            .color_at(left)
-            .is_some_and(|color| color != piece.color)
-    {
+    if get_move_type(game, piece, left) == MoveType::Attack {
         moves.push(left);
     }
-    if check_bounds(right)
-        && game
-            .color_at(right)
-            .is_some_and(|color| color != piece.color)
-    {
+    if get_move_type(game, piece, right) == MoveType::Attack {
         moves.push(right);
     }
 

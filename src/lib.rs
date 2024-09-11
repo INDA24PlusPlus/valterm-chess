@@ -242,12 +242,10 @@ mod tests {
     fn it_works() {
         let mut game = Game::new();
         game.load_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2");
-        game.force_move((3, 1).into(), (3, 3).into());
-        game.force_move((5, 6).into(), (5, 3).into());
-        game.force_move((1, 1).into(), (1, 2).into());
+        game.force_move((2, 4).into(), (2, 2).into());
         game.print_board();
 
-        println!("{:?}", get_piece_moves(&game, game.pieces[2][0].unwrap()));
+        println!("{:?}", get_piece_moves(&game, game.pieces[1][1].unwrap()));
         assert!(tests::verify_board(&game))
     }
 }
