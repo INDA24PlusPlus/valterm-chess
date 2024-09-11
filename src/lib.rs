@@ -2,11 +2,8 @@ use std::ops;
 
 use moves::check_bounds;
 
-/*
-Uncertain if 2D-array of Piece objects is the best way to go about representing the board...
-Perhaps switch to some other system?
-*/
 pub mod moves;
+pub mod tests;
 
 pub type Board = [[Option<Piece>; 8]; 8];
 
@@ -208,44 +205,5 @@ impl ops::Not for Color {
             Color::Black => Color::White,
             Color::White => Color::Black,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use moves::get_piece_moves;
-
-    use super::*;
-
-    fn verify_board(game: &Game) -> bool {
-        for y in 0..8 {
-            for x in 0..8 {
-                let piece = match game.pieces[x][y] {
-                    Some(piece) => piece,
-                    None => continue,
-                };
-
-                if piece.position
-                    != (Position {
-                        x: x as i8,
-                        y: y as i8,
-                    })
-                {
-                    return false;
-                }
-            }
-        }
-        true
-    }
-
-    #[test]
-    fn it_works() {
-        let mut game = Game::new();
-        game.load_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2");
-        game.force_move((2, 4).into(), (2, 2).into());
-        game.print_board();
-
-        println!("{:?}", get_piece_moves(&game, game.pieces[1][1].unwrap()));
-        assert!(tests::verify_board(&game))
     }
 }

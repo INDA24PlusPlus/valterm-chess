@@ -52,6 +52,7 @@ pub fn get_piece_moves(game: &Game, piece: Piece) -> Moves {
         PieceType::Pawn => get_pawn_moves(game, piece),
         PieceType::Knight => get_knight_moves(game, piece),
         PieceType::Bishop => get_bishop_moves(game, piece),
+        PieceType::Rook => get_rook_moves(game, piece),
         _ => panic!("Unimplemented!"),
     }
 }
@@ -147,6 +148,19 @@ pub fn get_bishop_moves(game: &Game, piece: Piece) -> Moves {
     moves.append(&mut get_moves_direction(game, piece, (-1, 1).into()));
     moves.append(&mut get_moves_direction(game, piece, (1, -1).into()));
     moves.append(&mut get_moves_direction(game, piece, (-1, -1).into()));
+
+    moves
+}
+
+pub fn get_rook_moves(game: &Game, piece: Piece) -> Moves {
+    let mut moves: Moves = vec![];
+
+    moves.append(&mut get_moves_direction(game, piece, (1, 0).into()));
+    moves.append(&mut get_moves_direction(game, piece, (0, 1).into()));
+    moves.append(&mut get_moves_direction(game, piece, (-1, 0).into()));
+    moves.append(&mut get_moves_direction(game, piece, (0, -1).into()));
+
+    // TODO: Castling
 
     moves
 }
