@@ -83,7 +83,7 @@ impl Game {
         for y in (0..8).rev() {
             for x in 0..8 {
                 let mut c = match self.pieces[x][y] {
-                    None => '_',
+                    None => '.',
                     Some(piece) => match piece.piece_type {
                         PieceType::King => 'K',
                         PieceType::Queen => 'Q',
@@ -242,10 +242,12 @@ mod tests {
     fn it_works() {
         let mut game = Game::new();
         game.load_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2");
-        game.force_move(Position { x: (6), y: (6) }, Position { x: (6), y: (2) });
+        game.force_move((3, 1).into(), (3, 3).into());
+        game.force_move((5, 6).into(), (5, 3).into());
+        game.force_move((1, 1).into(), (1, 2).into());
         game.print_board();
 
-        println!("{:?}", get_piece_moves(&game, game.pieces[5][1].unwrap()));
+        println!("{:?}", get_piece_moves(&game, game.pieces[2][0].unwrap()));
         assert!(tests::verify_board(&game))
     }
 }

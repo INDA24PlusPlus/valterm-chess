@@ -15,19 +15,47 @@ fn push_if_valid(moves: &mut Moves, position: Position) {
     }
 }
 
-fn push_if_valid_check_collision(moves: &mut Moves, piece: Piece, delta: Position) {
-    todo!()
+#[derive(Debug, PartialEq)]
+pub enum MoveType {
+    Invalid,
+    Regular,
+    Attack,
+}
+
+fn get_move_type(game: &Game, piece: Piece, position: Position) -> MoveType {
+    if !check_bounds(position) {
+        return MoveType::Invalid;
+    }
+
+    match game.color_at(position) {
+        Some(color) => {
+            if color != piece.color {
+                return MoveType::Attack;
+            }
+        }
+        None => return MoveType::Regular,
+    }
+
+    MoveType::Invalid
+}
+
+fn push_if_valid_attack(moves: &mut Moves, game: &Game, piece: Piece, delta: Position) {
+    let new_position = piece.position + delta;
+    match get_move_type(game, piece, new_position) {
+        MoveType::Invalid => (),
+        _ => moves.push(new_position),
+    }
 }
 
 pub fn get_piece_moves(game: &Game, piece: Piece) -> Moves {
     match piece.piece_type {
         PieceType::Pawn => get_pawn_moves(game, piece),
         PieceType::Knight => get_knight_moves(game, piece),
+        PieceType::Bishop => get_bishop_moves(game, piece),
         _ => panic!("Unimplemented!"),
     }
 }
 
-// Returns all possible moves for a certain piece, does not perform extensive checking (collisions with own pieces etc)
 pub fn get_pawn_moves(game: &Game, piece: Piece) -> Moves {
     let mut moves: Moves = vec![];
 
@@ -84,17 +112,49 @@ pub fn get_pawn_moves(game: &Game, piece: Piece) -> Moves {
     moves
 }
 
-pub fn get_knight_moves(_game: &Game, piece: Piece) -> Moves {
+pub fn get_knight_moves(game: &Game, piece: Piece) -> Moves {
     let mut moves: Moves = vec![];
 
-    push_if_valid(&mut moves, piece.position + (2, 1));
-    push_if_valid(&mut moves, piece.position + (2, -1));
-    push_if_valid(&mut moves, piece.position + (-2, 1));
-    push_if_valid(&mut moves, piece.position + (-2, -1));
-    push_if_valid(&mut moves, piece.position + (1, 2));
-    push_if_valid(&mut moves, piece.position + (1, -2));
-    push_if_valid(&mut moves, piece.position + (-1, 2));
-    push_if_valid(&mut moves, piece.position + (-1, -2));
+    push_if_valid_attack(&mut moves, game, piece, (2, 1).into());
+    push_if_valid_attack(&mut moves, game, piece, (2, -1).into());
+    push_if_valid_attack(&mut moves, game, piece, (-2, 1).into());
+    push_if_valid_attack(&mut moves, game, piece, (-2, -1).into());
+    push_if_valid_attack(&mut moves, game, piece, (1, 2).into());
+    push_if_valid_attack(&mut moves, game, piece, (1, -2).into());
+    push_if_valid_attack(&mut moves, game, piece, (-1, 2).into());
+    push_if_valid_attack(&mut moves, game, piece, (-1, -2).into());
+
+    moves
+}
+
+pub fn get_moves_direction(game: &Game, piece: Piece, direction: Position) -> Moves {
+    let mut moves: Moves = vec![];
+
+    let mut pos = piece.position + direction;
+    while check_bounds(pos) {
+        match get_move_type(game, piece, pos) {
+            MoveType::Attack => {
+                moves.push(pos);
+                break;
+            }
+            MoveType::Invalid => break,
+            MoveType::Regular => (),
+        }
+
+        moves.push(pos);
+        pos = pos + direction;
+    }
+
+    moves
+}
+
+pub fn get_bishop_moves(game: &Game, piece: Piece) -> Moves {
+    let mut moves: Moves = vec![];
+
+    moves.append(&mut get_moves_direction(game, piece, (1, 1).into()));
+    moves.append(&mut get_moves_direction(game, piece, (-1, 1).into()));
+    moves.append(&mut get_moves_direction(game, piece, (1, -1).into()));
+    moves.append(&mut get_moves_direction(game, piece, (-1, -1).into()));
 
     moves
 }
