@@ -9,7 +9,7 @@ pub fn check_bounds(position: Position) -> bool {
     true
 }
 
-fn push_if_valid(moves: &mut Moves, position: Position) {
+fn push_if_valid_bounds(moves: &mut Moves, position: Position) {
     if check_bounds(position) {
         moves.push(position);
     }
@@ -47,12 +47,17 @@ fn push_if_valid_attack(moves: &mut Moves, game: &Game, piece: Piece, delta: Pos
     }
 }
 
+/* fn filter_if_checkable(game: &Game, piece: Piece, position: Move) {
+
+} */
+
 pub fn get_piece_moves(game: &Game, piece: Piece) -> Moves {
     match piece.piece_type {
         PieceType::Pawn => get_pawn_moves(game, piece),
         PieceType::Knight => get_knight_moves(game, piece),
         PieceType::Bishop => get_bishop_moves(game, piece),
         PieceType::Rook => get_rook_moves(game, piece),
+        PieceType::Queen => get_queen_moves(game, piece),
         _ => panic!("Unimplemented!"),
     }
 }
@@ -95,8 +100,8 @@ pub fn get_pawn_moves(game: &Game, piece: Piece) -> Moves {
     // Double step forward
     if initial_move && forward_valid {
         match piece.color {
-            Color::White => push_if_valid(&mut moves, piece.position + (0, 2)),
-            Color::Black => push_if_valid(&mut moves, piece.position - (0, 2)),
+            Color::White => push_if_valid_bounds(&mut moves, piece.position + (0, 2)),
+            Color::Black => push_if_valid_bounds(&mut moves, piece.position - (0, 2)),
         }
     }
 
@@ -161,6 +166,22 @@ pub fn get_rook_moves(game: &Game, piece: Piece) -> Moves {
     moves.append(&mut get_moves_direction(game, piece, (0, -1).into()));
 
     // TODO: Castling
+
+    moves
+}
+
+pub fn get_queen_moves(game: &Game, piece: Piece) -> Moves {
+    let mut moves: Moves = vec![];
+
+    moves.append(&mut get_moves_direction(game, piece, (1, 0).into()));
+    moves.append(&mut get_moves_direction(game, piece, (0, 1).into()));
+    moves.append(&mut get_moves_direction(game, piece, (-1, 0).into()));
+    moves.append(&mut get_moves_direction(game, piece, (0, -1).into()));
+
+    moves.append(&mut get_moves_direction(game, piece, (1, 1).into()));
+    moves.append(&mut get_moves_direction(game, piece, (-1, 1).into()));
+    moves.append(&mut get_moves_direction(game, piece, (1, -1).into()));
+    moves.append(&mut get_moves_direction(game, piece, (-1, -1).into()));
 
     moves
 }
