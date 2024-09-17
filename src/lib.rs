@@ -1,6 +1,6 @@
 use std::ops;
 
-use moves::check_bounds;
+use moves::{check_bounds, get_piece_moves};
 
 pub mod moves;
 pub mod tests;
@@ -126,6 +126,41 @@ impl Game {
 
     pub fn color_at(&self, position: Position) -> Option<Color> {
         self.pieces[position.x as usize][position.y as usize].map(|piece| piece.color)
+    }
+
+    /// Returns the color of the currently checked player, None if no player is checked
+    /// Will panic if any king is missing, please dont call if there is no king :(
+    pub fn is_check(&self) -> Option<Color> {
+        let pieces = self.get_pieces();
+        let white_king = *pieces
+            .iter()
+            .find(|piece| piece.color == Color::White && piece.piece_type == PieceType::King)
+            .unwrap();
+
+        let black_king = *pieces
+            .iter()
+            .find(|piece| piece.color == Color::Black && piece.piece_type == PieceType::King)
+            .unwrap();
+
+        for piece in pieces {
+            if piece.color == Color::White
+                && get_piece_moves(self, piece)
+                    .iter()
+                    .any(|position| *position == black_king.position)
+            {
+                return Some(Color::Black);
+            }
+
+            if piece.color == Color::Black
+                && get_piece_moves(self, piece)
+                    .iter()
+                    .any(|position| *position == white_king.position)
+            {
+                return Some(Color::White);
+            }
+        }
+
+        None
     }
 }
 

@@ -58,6 +58,7 @@ pub fn get_piece_moves(game: &Game, piece: Piece) -> Moves {
         PieceType::Bishop => get_bishop_moves(game, piece),
         PieceType::Rook => get_rook_moves(game, piece),
         PieceType::Queen => get_queen_moves(game, piece),
+        PieceType::King => get_king_moves(game, piece),
         _ => panic!("Unimplemented!"),
     }
 }
@@ -184,4 +185,10 @@ pub fn get_queen_moves(game: &Game, piece: Piece) -> Moves {
     moves.append(&mut get_moves_direction(game, piece, (-1, -1).into()));
 
     moves
+}
+
+pub fn get_king_moves(_game: &Game, _piece: Piece) -> Moves {
+    let mut _moves: Moves = vec![];
+
+    _moves
 }

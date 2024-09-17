@@ -239,4 +239,16 @@ mod chess_tests {
             .into()
         ));
     }
+
+    #[test]
+    fn check() {
+        let mut game = Game::new();
+        game.load_fen("rnb1kbnr/pp1ppppp/8/q1p5/4P3/3P4/PPP2PPP/RNBQKBNR");
+
+        assert_eq!(game.is_check(), Some(Color::White));
+
+        game.load_fen("rnb1kbnr/pp1ppppp/8/q1p5/4P3/8/PPPP1PPP/RNBQKBNR");
+
+        assert_eq!(game.is_check(), None);
+    }
 }
