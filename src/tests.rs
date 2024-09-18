@@ -1,29 +1,6 @@
 #[cfg(test)]
 mod chess_tests {
-    use moves::get_piece_moves;
-
     use crate::*;
-
-    fn verify_board(game: &Game) -> bool {
-        for y in 0..8 {
-            for x in 0..8 {
-                let piece = match game.pieces[x][y] {
-                    Some(piece) => piece,
-                    None => continue,
-                };
-
-                if piece.position
-                    != (Position {
-                        x: x as i8,
-                        y: y as i8,
-                    })
-                {
-                    return false;
-                }
-            }
-        }
-        true
-    }
 
     fn elements_eq<T: PartialEq>(left: Vec<T>, right: Vec<T>) -> bool {
         return left == right || left.iter().all(|elem| right.contains(elem));
@@ -205,15 +182,15 @@ mod chess_tests {
         let mut game = Game::new();
         game.load_fen("rnbqkbnr/pp1ppppp/8/8/4P3/2p2N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2");
         assert!(elements_eq(
-            get_piece_moves(&game, game.pieces[1][1].unwrap()),
+            game.get_valid_moves(game.pieces[1][1].unwrap()),
             [(1, 2).into(), (1, 3).into(), (2, 2).into()].into()
         ));
         assert!(elements_eq(
-            get_piece_moves(&game, game.pieces[2][2].unwrap()),
+            game.get_valid_moves(game.pieces[2][2].unwrap()),
             [(1, 1).into(), (3, 1).into()].into()
         ));
         assert!(elements_eq(
-            get_piece_moves(&game, game.pieces[2][1].unwrap()),
+            game.get_valid_moves(game.pieces[2][1].unwrap()),
             [].into()
         ));
     }
@@ -224,11 +201,11 @@ mod chess_tests {
         game.load_fen("rnbqkbnr/pp1ppppp/8/8/4P3/2p2N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2");
 
         assert!(elements_eq(
-            get_piece_moves(&game, game.pieces[1][0].unwrap()),
+            game.get_valid_moves(game.pieces[1][0].unwrap()),
             [(0, 2).into(), (2, 2).into()].into()
         ));
         assert!(elements_eq(
-            get_piece_moves(&game, game.pieces[5][2].unwrap()),
+            game.get_valid_moves(game.pieces[5][2].unwrap()),
             [
                 (6, 0).into(),
                 (7, 3).into(),

@@ -1,22 +1,40 @@
-use std::ops;
+use std::{ops, str::FromStr};
 
-use moves::{check_bounds, get_piece_moves};
+use moves::{check_bounds, get_move_type, get_pseudo_moves, MoveType, Moves};
 
 pub mod moves;
 pub mod tests;
 
 pub type Board = [[Option<Piece>; 8]; 8];
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Game {
-    pieces: Board,
+    pub pieces: Board,
+    pub current_move: Color,
+    status: GameStatus,
+}
+
+#[derive(Debug, Default, Clone, Copy, PartialEq)]
+pub enum GameStatus {
+    #[default]
+    Active,
+    Check(Color),
+    Checkmate(Color),
+    Stalemate,
+    Promotion(Piece),
 }
 
 impl Game {
     pub fn new() -> Self {
         Self {
             pieces: [[None; 8]; 8],
+            current_move: Color::White,
+            status: GameStatus::Active,
         }
+    }
+
+    pub fn default_board(&mut self) {
+        self.load_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
     }
 
     pub fn clear_board(&mut self) {
@@ -144,7 +162,7 @@ impl Game {
 
         for piece in pieces {
             if piece.color == Color::White
-                && get_piece_moves(self, piece)
+                && get_pseudo_moves(self, piece)
                     .iter()
                     .any(|position| *position == black_king.position)
             {
@@ -152,7 +170,7 @@ impl Game {
             }
 
             if piece.color == Color::Black
-                && get_piece_moves(self, piece)
+                && get_pseudo_moves(self, piece)
                     .iter()
                     .any(|position| *position == white_king.position)
             {
@@ -161,6 +179,168 @@ impl Game {
         }
 
         None
+    }
+
+    pub fn move_piece(&mut self, piece: Piece, to: Position) -> MoveType {
+        if piece.color != self.current_move {
+            return MoveType::Invalid;
+        }
+
+        let possible_moves = self.get_valid_moves(piece);
+
+        if !possible_moves.contains(&to) {
+            return MoveType::Invalid;
+        }
+
+        let move_type = get_move_type(self, piece, to);
+
+        self.force_move(piece.position, to);
+
+        if piece.piece_type == PieceType::Pawn
+            && ((to.y == 0 && piece.color == Color::Black)
+                || (to.y == 7 && piece.color == Color::White))
+        {
+            // Pawn promotion
+            self.status = GameStatus::Promotion(self.pieces[to.x as usize][to.y as usize].unwrap());
+        }
+
+        self.current_move = !self.current_move;
+
+        move_type
+    }
+
+    /// Checks whether or not a move puts own player in check
+    /// Kinda janky maybe rewrite?
+    fn self_check(&mut self, piece: Piece, position: Position) -> bool {
+        let old = self.pieces[position.x as usize][position.y as usize];
+        self.force_move(piece.position, position); // Move piece to new position to see if checked
+
+        if self.is_check().is_some_and(|color| color == piece.color) {
+            self.force_move(position, piece.position); // Reset position
+            self.pieces[position.x as usize][position.y as usize] = old;
+            return true;
+        }
+
+        self.force_move(position, piece.position); // Reset position
+        self.pieces[position.x as usize][position.y as usize] = old;
+        false
+    }
+
+    /// Performs full validation of valid moves, including blocking checked moves etc
+    pub fn get_valid_moves(&mut self, piece: Piece) -> Moves {
+        let moves = get_pseudo_moves(self, piece);
+
+        // Filter out moves that puts own player in check
+        let valid_moves: Vec<Position> = moves
+            .iter()
+            .filter(|mov| !self.self_check(piece, **mov))
+            .cloned()
+            .collect();
+
+        valid_moves
+    }
+
+    /// Checks if a certain moves the player out of a checked position
+    fn escape_check(&mut self, piece: Piece, position: Position) -> bool {
+        let old = self.pieces[position.x as usize][position.y as usize];
+        self.force_move(piece.position, position); // Move piece to new position to see if checked
+
+        if self.is_check().is_none() || self.is_check().is_some_and(|color| color != piece.color) {
+            self.force_move(position, piece.position); // Reset position
+            self.pieces[position.x as usize][position.y as usize] = old;
+            return true;
+        }
+
+        self.force_move(position, piece.position); // Reset position
+        self.pieces[position.x as usize][position.y as usize] = old;
+        false
+    }
+
+    pub fn is_checkmate(&mut self) -> Option<Color> {
+        // Color that is checked
+        let checked = match self.is_check() {
+            Some(color) => color,
+            None => return None,
+        };
+
+        // All pieces of that color
+        let pieces: Vec<Piece> = self
+            .get_pieces()
+            .iter()
+            .filter(|piece| piece.color == checked)
+            .cloned()
+            .collect();
+
+        for piece in pieces {
+            let moves = self.get_valid_moves(piece);
+            for mov in moves {
+                if self.escape_check(piece, mov) {
+                    return None;
+                }
+            }
+        }
+
+        Some(checked)
+    }
+
+    pub fn is_stalemate(&mut self) -> bool {
+        if self.is_check().is_some() {
+            return false;
+        }
+
+        let pieces: Vec<Piece> = self
+            .get_pieces()
+            .iter()
+            .filter(|piece| piece.color == self.current_move)
+            .cloned()
+            .collect();
+
+        for piece in pieces {
+            if !self.get_valid_moves(piece).is_empty() {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    pub fn promote(&mut self, target: PieceType) {
+        let to_upgrade = match self.status {
+            GameStatus::Promotion(piece) => piece,
+            _ => panic!("Error!"),
+        };
+
+        self.pieces[to_upgrade.position.x as usize][to_upgrade.position.y as usize]
+            .as_mut()
+            .unwrap()
+            .piece_type = target;
+
+        self.status = GameStatus::Active;
+    }
+
+    // Updates internal game status and returns it, to be called after each move by a player
+    pub fn update_game(&mut self) -> GameStatus {
+        if let GameStatus::Promotion(_) = self.status {
+            return self.status;
+        }
+
+        if let Some(color) = self.is_checkmate() {
+            self.status = GameStatus::Checkmate(color);
+            return self.status;
+        };
+
+        if let Some(color) = self.is_check() {
+            self.status = GameStatus::Check(color);
+            return self.status;
+        };
+
+        if self.is_stalemate() {
+            self.status = GameStatus::Stalemate;
+            return self.status;
+        }
+
+        self.status = GameStatus::Active;
+        self.status
     }
 }
 
@@ -173,8 +353,35 @@ pub struct Piece {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Position {
-    x: i8,
-    y: i8,
+    pub x: i8,
+    pub y: i8,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct ParsePositionError;
+
+impl FromStr for Position {
+    type Err = ParsePositionError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let chars: Vec<char> = s.chars().collect();
+
+        let x = chars[0].to_ascii_lowercase() as u8 - b'a';
+        let y = chars[1].to_digit(10).unwrap_or(0) - 1;
+
+        Ok((x as i8, y as i8).into())
+    }
+}
+
+use std::fmt;
+
+impl fmt::Display for Position {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let x = ((self.x as u8 + b'A') as char).to_string();
+        let y = (self.y + 1).to_string();
+
+        write!(f, "{}{}", x, y)
+    }
 }
 
 impl From<(i8, i8)> for Position {
@@ -226,8 +433,9 @@ pub enum PieceType {
     Pawn,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub enum Color {
+    #[default]
     White,
     Black,
 }

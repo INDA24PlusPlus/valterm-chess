@@ -1,6 +1,6 @@
 use crate::{Color, Game, Piece, PieceType, Position};
 
-type Moves = Vec<Position>;
+pub type Moves = Vec<Position>;
 
 pub fn check_bounds(position: Position) -> bool {
     if position.x > 7 || position.y > 7 || position.x < 0 || position.y < 0 {
@@ -22,7 +22,8 @@ pub enum MoveType {
     Attack,
 }
 
-fn get_move_type(game: &Game, piece: Piece, position: Position) -> MoveType {
+/// Does not check piece-specific movement requirements
+pub fn get_move_type(game: &Game, piece: Piece, position: Position) -> MoveType {
     if !check_bounds(position) {
         return MoveType::Invalid;
     }
@@ -47,11 +48,7 @@ fn push_if_valid_attack(moves: &mut Moves, game: &Game, piece: Piece, delta: Pos
     }
 }
 
-/* fn filter_if_checkable(game: &Game, piece: Piece, position: Move) {
-
-} */
-
-pub fn get_piece_moves(game: &Game, piece: Piece) -> Moves {
+pub fn get_pseudo_moves(game: &Game, piece: Piece) -> Moves {
     match piece.piece_type {
         PieceType::Pawn => get_pawn_moves(game, piece),
         PieceType::Knight => get_knight_moves(game, piece),
@@ -59,11 +56,10 @@ pub fn get_piece_moves(game: &Game, piece: Piece) -> Moves {
         PieceType::Rook => get_rook_moves(game, piece),
         PieceType::Queen => get_queen_moves(game, piece),
         PieceType::King => get_king_moves(game, piece),
-        _ => panic!("Unimplemented!"),
     }
 }
 
-pub fn get_pawn_moves(game: &Game, piece: Piece) -> Moves {
+fn get_pawn_moves(game: &Game, piece: Piece) -> Moves {
     let mut moves: Moves = vec![];
 
     let mut left = piece.position;
@@ -99,10 +95,16 @@ pub fn get_pawn_moves(game: &Game, piece: Piece) -> Moves {
         || (piece.position.y == 6 && piece.color == Color::Black);
 
     // Double step forward
+    // FIX: Bug here where player can capture own pieces at double step forward
+    // Update: FIXED!
     if initial_move && forward_valid {
-        match piece.color {
-            Color::White => push_if_valid_bounds(&mut moves, piece.position + (0, 2)),
-            Color::Black => push_if_valid_bounds(&mut moves, piece.position - (0, 2)),
+        forward = match piece.color {
+            Color::White => piece.position + (0, 2),
+            Color::Black => piece.position - (0, 2),
+        };
+
+        if get_move_type(game, piece, forward) == MoveType::Regular {
+            push_if_valid_bounds(&mut moves, forward);
         }
     }
 
@@ -111,7 +113,7 @@ pub fn get_pawn_moves(game: &Game, piece: Piece) -> Moves {
     moves
 }
 
-pub fn get_knight_moves(game: &Game, piece: Piece) -> Moves {
+fn get_knight_moves(game: &Game, piece: Piece) -> Moves {
     let mut moves: Moves = vec![];
 
     push_if_valid_attack(&mut moves, game, piece, (2, 1).into());
@@ -126,7 +128,7 @@ pub fn get_knight_moves(game: &Game, piece: Piece) -> Moves {
     moves
 }
 
-pub fn get_moves_direction(game: &Game, piece: Piece, direction: Position) -> Moves {
+fn get_moves_direction(game: &Game, piece: Piece, direction: Position) -> Moves {
     let mut moves: Moves = vec![];
 
     let mut pos = piece.position + direction;
@@ -147,7 +149,7 @@ pub fn get_moves_direction(game: &Game, piece: Piece, direction: Position) -> Mo
     moves
 }
 
-pub fn get_bishop_moves(game: &Game, piece: Piece) -> Moves {
+fn get_bishop_moves(game: &Game, piece: Piece) -> Moves {
     let mut moves: Moves = vec![];
 
     moves.append(&mut get_moves_direction(game, piece, (1, 1).into()));
@@ -158,7 +160,7 @@ pub fn get_bishop_moves(game: &Game, piece: Piece) -> Moves {
     moves
 }
 
-pub fn get_rook_moves(game: &Game, piece: Piece) -> Moves {
+fn get_rook_moves(game: &Game, piece: Piece) -> Moves {
     let mut moves: Moves = vec![];
 
     moves.append(&mut get_moves_direction(game, piece, (1, 0).into()));
@@ -171,7 +173,7 @@ pub fn get_rook_moves(game: &Game, piece: Piece) -> Moves {
     moves
 }
 
-pub fn get_queen_moves(game: &Game, piece: Piece) -> Moves {
+fn get_queen_moves(game: &Game, piece: Piece) -> Moves {
     let mut moves: Moves = vec![];
 
     moves.append(&mut get_moves_direction(game, piece, (1, 0).into()));
@@ -187,8 +189,18 @@ pub fn get_queen_moves(game: &Game, piece: Piece) -> Moves {
     moves
 }
 
-pub fn get_king_moves(_game: &Game, _piece: Piece) -> Moves {
-    let mut _moves: Moves = vec![];
+fn get_king_moves(game: &Game, piece: Piece) -> Moves {
+    let mut moves: Moves = vec![];
 
-    _moves
+    push_if_valid_attack(&mut moves, game, piece, (1, 0).into());
+    push_if_valid_attack(&mut moves, game, piece, (0, 1).into());
+    push_if_valid_attack(&mut moves, game, piece, (-1, 0).into());
+    push_if_valid_attack(&mut moves, game, piece, (0, -1).into());
+
+    push_if_valid_attack(&mut moves, game, piece, (1, 1).into());
+    push_if_valid_attack(&mut moves, game, piece, (-1, 1).into());
+    push_if_valid_attack(&mut moves, game, piece, (1, -1).into());
+    push_if_valid_attack(&mut moves, game, piece, (-1, -1).into());
+
+    moves
 }
