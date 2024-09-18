@@ -24,6 +24,7 @@ pub enum GameStatus {
     Checkmate(Color),
     Stalemate,
     Promotion(Piece),
+    FiftyMoveRule,
 }
 
 impl Game {
@@ -210,11 +211,11 @@ impl Game {
         if !possible_moves.contains(&to) {
             return MoveType::Invalid;
         }
+        let move_type = get_move_type(self, piece, to);
 
         // Reset en passant thingy
+        let saved_en_passant = self.en_passant_possible; // please end my suffering
         self.en_passant_possible = None;
-
-        let move_type = get_move_type(self, piece, to);
 
         self.force_move(piece.position, to);
 
@@ -231,6 +232,21 @@ impl Game {
         // Pawn moved two steps, en passant is now possible
         if piece.piece_type == PieceType::Pawn && (piece.position - to).y.abs() == 2 {
             self.en_passant_possible = Some(new_piece);
+        }
+        // Capture if en passant happened or something
+
+        // Capture if en passant happened or something idk at this point
+        if move_type == MoveType::EnPassant {
+            let passed = saved_en_passant.unwrap(); // Should not fail :sunglasses:
+            self.pieces[passed.position.x as usize][passed.position.y as usize] = None;
+            // goodbye bozo
+        }
+
+        // 50 move rule
+        if get_move_type(self, piece, to) == MoveType::Attack {
+            self.moves_since_capture = 0;
+        } else {
+            self.moves_since_capture += 1;
         }
 
         self.current_move = !self.current_move;
@@ -366,6 +382,11 @@ impl Game {
 
         if self.is_stalemate() {
             self.status = GameStatus::Stalemate;
+            return self.status;
+        }
+
+        if self.moves_since_capture == 50 {
+            self.status = GameStatus::FiftyMoveRule;
             return self.status;
         }
 

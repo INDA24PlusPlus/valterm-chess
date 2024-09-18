@@ -368,6 +368,7 @@ mod chess_tests {
             game.get_valid_moves(game.pieces[4][3].unwrap()),
             [(4, 2).into(), (3, 2).into()].into()
         ));
+        game.en_passant_possible = None;
         //println!("{:?}", game.get_valid_moves(game.pieces[4][3].unwrap()));
 
         game.load_fen("rnbqkbnr/ppp1pppp/3p4/3P4/8/8/PPP1PPPP/RNBQKBNR");
@@ -377,5 +378,7 @@ mod chess_tests {
             game.get_valid_moves(game.pieces[3][4].unwrap()),
             [(4, 5).into()].into()
         ));
+        game.move_piece(game.pieces[3][4].unwrap(), (4, 5).into());
+        assert_eq!(game.en_passant_possible, None);
     }
 }
