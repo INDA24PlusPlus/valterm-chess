@@ -20,12 +20,33 @@ pub enum MoveType {
     Invalid,
     Regular,
     Attack,
+    EnPassant,
+    Castling,
 }
 
 /// Does not check piece-specific movement requirements
 pub fn get_move_type(game: &Game, piece: Piece, position: Position) -> MoveType {
     if !check_bounds(position) {
         return MoveType::Invalid;
+    }
+
+    // En passant
+    if piece.piece_type == PieceType::Pawn
+        && game
+            .en_passant_possible
+            .is_some_and(|piece2| piece2.color != piece.color)
+    {
+        let to_pass = game.en_passant_possible.unwrap();
+        let mut behind = to_pass.position;
+        if to_pass.color == Color::White {
+            behind = behind - (0, 1);
+        } else {
+            behind = behind + (0, 1);
+        }
+
+        if position == behind && game.color_at(behind).is_none() {
+            return MoveType::EnPassant;
+        }
     }
 
     match game.color_at(position) {
@@ -83,11 +104,16 @@ fn get_pawn_moves(game: &Game, piece: Piece) -> Moves {
         forward_valid = true;
     }
 
-    // Sideways capture
-    if get_move_type(game, piece, left) == MoveType::Attack {
+    // Sideways capture or en passant
+    if get_move_type(game, piece, left) == MoveType::Attack
+        || get_move_type(game, piece, left) == MoveType::EnPassant
+    {
         moves.push(left);
     }
-    if get_move_type(game, piece, right) == MoveType::Attack {
+
+    if get_move_type(game, piece, right) == MoveType::Attack
+        || get_move_type(game, piece, right) == MoveType::EnPassant
+    {
         moves.push(right);
     }
 
@@ -107,8 +133,6 @@ fn get_pawn_moves(game: &Game, piece: Piece) -> Moves {
             push_if_valid_bounds(&mut moves, forward);
         }
     }
-
-    // TODO: En passant
 
     moves
 }
@@ -138,8 +162,8 @@ fn get_moves_direction(game: &Game, piece: Piece, direction: Position) -> Moves 
                 moves.push(pos);
                 break;
             }
-            MoveType::Invalid => break,
             MoveType::Regular => (),
+            _ => break,
         }
 
         moves.push(pos);

@@ -12,6 +12,8 @@ pub struct Game {
     pub pieces: Board,
     pub current_move: Color,
     status: GameStatus,
+    en_passant_possible: Option<Piece>,
+    moves_since_capture: u32,
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
@@ -30,6 +32,8 @@ impl Game {
             pieces: [[None; 8]; 8],
             current_move: Color::White,
             status: GameStatus::Active,
+            en_passant_possible: None,
+            moves_since_capture: 0,
         }
     }
 
@@ -160,22 +164,37 @@ impl Game {
             .find(|piece| piece.color == Color::Black && piece.piece_type == PieceType::King)
             .unwrap();
 
-        for piece in pieces {
-            if piece.color == Color::White
-                && get_pseudo_moves(self, piece)
-                    .iter()
-                    .any(|position| *position == black_king.position)
-            {
-                return Some(Color::Black);
-            }
+        let mut black_checked = false;
+        let mut white_checked = false;
 
-            if piece.color == Color::Black
+        for piece in pieces.clone() {
+            // Fixed bug where some edge cases are misinterpreted
+            black_checked = piece.color == Color::White
                 && get_pseudo_moves(self, piece)
                     .iter()
-                    .any(|position| *position == white_king.position)
-            {
-                return Some(Color::White);
+                    .any(|position| *position == black_king.position);
+
+            if black_checked {
+                break;
             }
+        }
+
+        for piece in pieces {
+            white_checked = piece.color == Color::Black
+                && get_pseudo_moves(self, piece)
+                    .iter()
+                    .any(|position| *position == white_king.position);
+            if white_checked {
+                break;
+            }
+        }
+
+        if white_checked && black_checked {
+            return Some(self.current_move);
+        } else if white_checked {
+            return Some(Color::White);
+        } else if black_checked {
+            return Some(Color::Black);
         }
 
         None
@@ -192,16 +211,26 @@ impl Game {
             return MoveType::Invalid;
         }
 
+        // Reset en passant thingy
+        self.en_passant_possible = None;
+
         let move_type = get_move_type(self, piece, to);
 
         self.force_move(piece.position, to);
+
+        let new_piece = self.pieces[to.x as usize][to.y as usize].unwrap();
 
         if piece.piece_type == PieceType::Pawn
             && ((to.y == 0 && piece.color == Color::Black)
                 || (to.y == 7 && piece.color == Color::White))
         {
             // Pawn promotion
-            self.status = GameStatus::Promotion(self.pieces[to.x as usize][to.y as usize].unwrap());
+            self.status = GameStatus::Promotion(new_piece);
+        }
+
+        // Pawn moved two steps, en passant is now possible
+        if piece.piece_type == PieceType::Pawn && (piece.position - to).y.abs() == 2 {
+            self.en_passant_possible = Some(new_piece);
         }
 
         self.current_move = !self.current_move;
@@ -216,6 +245,7 @@ impl Game {
         self.force_move(piece.position, position); // Move piece to new position to see if checked
 
         if self.is_check().is_some_and(|color| color == piece.color) {
+            //if self.is_check().is_some() {
             self.force_move(position, piece.position); // Reset position
             self.pieces[position.x as usize][position.y as usize] = old;
             return true;
@@ -397,6 +427,17 @@ impl ops::Add<Position> for Position {
         Position {
             x: self.x + rhs.x,
             y: self.y + rhs.y,
+        }
+    }
+}
+
+impl ops::Sub<Position> for Position {
+    type Output = Position;
+
+    fn sub(self, rhs: Position) -> Position {
+        Position {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
         }
     }
 }
