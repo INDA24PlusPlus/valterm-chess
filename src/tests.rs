@@ -18,161 +18,193 @@ mod chess_tests {
                 color: Color::White,
                 piece_type: PieceType::Rook,
                 position: Position { x: 0, y: 0 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::White,
                 piece_type: PieceType::Pawn,
                 position: Position { x: 0, y: 1 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::Black,
                 piece_type: PieceType::Pawn,
                 position: Position { x: 0, y: 6 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::Black,
                 piece_type: PieceType::Rook,
                 position: Position { x: 0, y: 7 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::White,
                 piece_type: PieceType::Knight,
                 position: Position { x: 1, y: 0 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::White,
                 piece_type: PieceType::Pawn,
                 position: Position { x: 1, y: 1 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::Black,
                 piece_type: PieceType::Pawn,
                 position: Position { x: 1, y: 6 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::Black,
                 piece_type: PieceType::Knight,
                 position: Position { x: 1, y: 7 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::White,
                 piece_type: PieceType::Bishop,
                 position: Position { x: 2, y: 0 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::White,
                 piece_type: PieceType::Pawn,
                 position: Position { x: 2, y: 1 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::Black,
                 piece_type: PieceType::Pawn,
                 position: Position { x: 2, y: 4 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::Black,
                 piece_type: PieceType::Bishop,
                 position: Position { x: 2, y: 7 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::White,
                 piece_type: PieceType::Queen,
                 position: Position { x: 3, y: 0 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::White,
                 piece_type: PieceType::Pawn,
                 position: Position { x: 3, y: 1 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::Black,
                 piece_type: PieceType::Pawn,
                 position: Position { x: 3, y: 6 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::Black,
                 piece_type: PieceType::Queen,
                 position: Position { x: 3, y: 7 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::White,
                 piece_type: PieceType::King,
                 position: Position { x: 4, y: 0 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::White,
                 piece_type: PieceType::Pawn,
                 position: Position { x: 4, y: 3 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::Black,
                 piece_type: PieceType::Pawn,
                 position: Position { x: 4, y: 6 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::Black,
                 piece_type: PieceType::King,
                 position: Position { x: 4, y: 7 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::White,
                 piece_type: PieceType::Bishop,
                 position: Position { x: 5, y: 0 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::White,
                 piece_type: PieceType::Pawn,
                 position: Position { x: 5, y: 1 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::White,
                 piece_type: PieceType::Knight,
                 position: Position { x: 5, y: 2 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::Black,
                 piece_type: PieceType::Pawn,
                 position: Position { x: 5, y: 6 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::Black,
                 piece_type: PieceType::Bishop,
                 position: Position { x: 5, y: 7 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::White,
                 piece_type: PieceType::Pawn,
                 position: Position { x: 6, y: 1 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::Black,
                 piece_type: PieceType::Pawn,
                 position: Position { x: 6, y: 6 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::Black,
                 piece_type: PieceType::Knight,
                 position: Position { x: 6, y: 7 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::White,
                 piece_type: PieceType::Rook,
                 position: Position { x: 7, y: 0 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::White,
                 piece_type: PieceType::Pawn,
                 position: Position { x: 7, y: 1 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::Black,
                 piece_type: PieceType::Pawn,
                 position: Position { x: 7, y: 6 },
+                num_moves: 0,
             },
             Piece {
                 color: Color::Black,
                 piece_type: PieceType::Rook,
                 position: Position { x: 7, y: 7 },
+                num_moves: 0,
             },
         ];
 
@@ -350,7 +382,7 @@ mod chess_tests {
         let mut game = Game::new();
         game.load_fen("7k/2P5/8/8/8/8/8/7K");
         assert_eq!(game.update_game(), GameStatus::Active);
-        game.move_piece(game.pieces[2][6].unwrap(), (2, 7).into());
+        game.move_piece((2, 6).into(), (2, 7).into());
         assert_eq!(
             game.update_game(),
             GameStatus::Promotion(game.pieces[2][7].unwrap())
@@ -363,7 +395,7 @@ mod chess_tests {
         let mut game = Game::new();
         game.load_fen("rnbqkbnr/pppp1ppp/8/8/4p3/8/PPPPPPPP/RNBQKBNR");
 
-        game.move_piece(game.pieces[3][1].unwrap(), (3, 2).into());
+        game.move_piece((3, 1).into(), (3, 2).into());
         assert!(elements_eq(
             game.get_valid_moves(game.pieces[4][3].unwrap()),
             [(4, 2).into(), (3, 2).into()].into()
@@ -373,12 +405,41 @@ mod chess_tests {
 
         game.load_fen("rnbqkbnr/ppp1pppp/3p4/3P4/8/8/PPP1PPPP/RNBQKBNR");
         game.current_move = Color::Black;
-        game.move_piece(game.pieces[4][6].unwrap(), (4, 4).into());
+        game.move_piece((4, 6).into(), (4, 4).into());
         assert!(elements_eq(
             game.get_valid_moves(game.pieces[3][4].unwrap()),
             [(4, 5).into()].into()
         ));
-        game.move_piece(game.pieces[3][4].unwrap(), (4, 5).into());
+        game.move_piece((3, 4).into(), (4, 5).into());
         assert_eq!(game.en_passant_possible, None);
+    }
+
+    #[test]
+    fn castling() {
+        let mut game = Game::new();
+        game.load_fen("2k5/8/8/3r4/8/8/8/R3K2R");
+        assert!(elements_eq(
+            game.get_valid_moves(game.pieces[4][0].unwrap()),
+            [(4, 1).into(), (5, 1).into(), (5, 0).into(), (6, 0).into()].into()
+        ));
+        game.move_piece((4, 0).into(), (6, 0).into());
+        assert!(game.pieces[5][0].is_some_and(|piece| piece.piece_type == PieceType::Rook));
+
+        game.load_fen("r3k2r/8/8/8/8/8/5R1R/4K3");
+        game.current_move = Color::Black;
+        assert!(elements_eq(
+            game.get_valid_moves(game.pieces[4][7].unwrap()),
+            [(4, 6).into(), (3, 7).into(), (3, 6).into(), (2, 7).into()].into()
+        ));
+        game.move_piece((4, 7).into(), (2, 7).into());
+        assert!(game.pieces[3][7].is_some_and(|piece| piece.piece_type == PieceType::Rook));
+
+        game.load_fen("r3k2r/8/8/8/8/8/4R2R/4K3");
+        game.current_move = Color::Black;
+        println!("{:?}", game.get_valid_moves(game.pieces[4][7].unwrap()));
+        assert!(elements_eq(
+            game.get_valid_moves(game.pieces[4][7].unwrap()),
+            [(5, 7).into(), (3, 7).into(), (3, 6).into(), (5, 6).into()].into()
+        ));
     }
 }

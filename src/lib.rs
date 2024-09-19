@@ -7,7 +7,7 @@ pub mod tests;
 
 pub type Board = [[Option<Piece>; 8]; 8];
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct Game {
     pub pieces: Board,
     pub current_move: Color,
@@ -68,6 +68,7 @@ impl Game {
                     color: Color::White,
                     piece_type: PieceType::Pawn,
                     position: Position { x, y },
+                    num_moves: 0,
                 };
 
                 if c.is_ascii_lowercase() {
@@ -151,46 +152,34 @@ impl Game {
         self.pieces[position.x as usize][position.y as usize].map(|piece| piece.color)
     }
 
+    pub fn is_color_checked(&self, color: Color) -> bool {
+        let pieces = self.get_pieces();
+        let king = *pieces
+            .iter()
+            .find(|piece| piece.color == color && piece.piece_type == PieceType::King)
+            .unwrap();
+
+        for piece in pieces {
+            if piece.color != color
+                && get_pseudo_moves(self, piece)
+                    .iter()
+                    .any(|position| *position == king.position)
+            {
+                return true;
+            }
+        }
+
+        false
+    }
+
     /// Returns the color of the currently checked player, None if no player is checked
     /// Will panic if any king is missing, please dont call if there is no king :(
     pub fn is_check(&self) -> Option<Color> {
-        let pieces = self.get_pieces();
-        let white_king = *pieces
-            .iter()
-            .find(|piece| piece.color == Color::White && piece.piece_type == PieceType::King)
-            .unwrap();
-
-        let black_king = *pieces
-            .iter()
-            .find(|piece| piece.color == Color::Black && piece.piece_type == PieceType::King)
-            .unwrap();
-
-        let mut black_checked = false;
-        let mut white_checked = false;
-
-        for piece in pieces.clone() {
-            // Fixed bug where some edge cases are misinterpreted
-            black_checked = piece.color == Color::White
-                && get_pseudo_moves(self, piece)
-                    .iter()
-                    .any(|position| *position == black_king.position);
-
-            if black_checked {
-                break;
-            }
-        }
-
-        for piece in pieces {
-            white_checked = piece.color == Color::Black
-                && get_pseudo_moves(self, piece)
-                    .iter()
-                    .any(|position| *position == white_king.position);
-            if white_checked {
-                break;
-            }
-        }
+        let white_checked = self.is_color_checked(Color::White);
+        let black_checked = self.is_color_checked(Color::Black);
 
         if white_checked && black_checked {
+            // Weird edge case
             return Some(self.current_move);
         } else if white_checked {
             return Some(Color::White);
@@ -201,7 +190,12 @@ impl Game {
         None
     }
 
-    pub fn move_piece(&mut self, piece: Piece, to: Position) -> MoveType {
+    pub fn move_piece(&mut self, from: Position, to: Position) -> MoveType {
+        let piece = match self.pieces[from.x as usize][from.y as usize] {
+            Some(p) => p,
+            None => return MoveType::Invalid,
+        };
+
         if piece.color != self.current_move {
             return MoveType::Invalid;
         }
@@ -219,6 +213,13 @@ impl Game {
 
         self.force_move(piece.position, to);
 
+        // Increase move counter
+        self.pieces[to.x as usize][to.y as usize]
+            .as_mut()
+            .unwrap()
+            .num_moves += 1;
+
+        // Copy updated piece for later use
         let new_piece = self.pieces[to.x as usize][to.y as usize].unwrap();
 
         if piece.piece_type == PieceType::Pawn
@@ -249,31 +250,40 @@ impl Game {
             self.moves_since_capture += 1;
         }
 
+        // Castling
+        if move_type == MoveType::Castling {
+            // Find rook who's nuts just got played with
+            // x is the target position for the rook
+            let (rook, x) = match new_piece.position.x {
+                2 => (self.pieces[0][new_piece.position.y as usize].unwrap(), 3),
+                6 => (self.pieces[7][new_piece.position.y as usize].unwrap(), 5),
+                _ => panic!("Castling has gone very wrong :("),
+            };
+
+            // Move it
+            self.force_move(rook.position, (x, piece.position.y).into());
+        }
+
         self.current_move = !self.current_move;
 
         move_type
     }
 
     /// Checks whether or not a move puts own player in check
-    /// Kinda janky maybe rewrite?
-    fn self_check(&mut self, piece: Piece, position: Position) -> bool {
-        let old = self.pieces[position.x as usize][position.y as usize];
-        self.force_move(piece.position, position); // Move piece to new position to see if checked
+    // Creates a copy of the board instead of mutating it (to avoid shit going horribly wrong)
+    fn self_check(&self, piece: Piece, position: Position) -> bool {
+        let mut copy_game = *self;
+        copy_game.force_move(piece.position, position); // Move piece to new position to see if checked
 
-        if self.is_check().is_some_and(|color| color == piece.color) {
-            //if self.is_check().is_some() {
-            self.force_move(position, piece.position); // Reset position
-            self.pieces[position.x as usize][position.y as usize] = old;
+        if copy_game.is_color_checked(piece.color) {
             return true;
         }
 
-        self.force_move(position, piece.position); // Reset position
-        self.pieces[position.x as usize][position.y as usize] = old;
         false
     }
 
     /// Performs full validation of valid moves, including blocking checked moves etc
-    pub fn get_valid_moves(&mut self, piece: Piece) -> Moves {
+    pub fn get_valid_moves(&self, piece: Piece) -> Moves {
         let moves = get_pseudo_moves(self, piece);
 
         // Filter out moves that puts own player in check
@@ -287,22 +297,22 @@ impl Game {
     }
 
     /// Checks if a certain moves the player out of a checked position
-    fn escape_check(&mut self, piece: Piece, position: Position) -> bool {
-        let old = self.pieces[position.x as usize][position.y as usize];
-        self.force_move(piece.position, position); // Move piece to new position to see if checked
+    fn escape_check(&self, piece: Piece, position: Position) -> bool {
+        let mut copy_game = *self;
+        copy_game.force_move(piece.position, position); // Move piece to new position to see if checked
 
-        if self.is_check().is_none() || self.is_check().is_some_and(|color| color != piece.color) {
-            self.force_move(position, piece.position); // Reset position
-            self.pieces[position.x as usize][position.y as usize] = old;
+        if copy_game.is_check().is_none()
+            || copy_game
+                .is_check()
+                .is_some_and(|color| color != piece.color)
+        {
             return true;
         }
 
-        self.force_move(position, piece.position); // Reset position
-        self.pieces[position.x as usize][position.y as usize] = old;
         false
     }
 
-    pub fn is_checkmate(&mut self) -> Option<Color> {
+    pub fn is_checkmate(&self) -> Option<Color> {
         // Color that is checked
         let checked = match self.is_check() {
             Some(color) => color,
@@ -329,7 +339,7 @@ impl Game {
         Some(checked)
     }
 
-    pub fn is_stalemate(&mut self) -> bool {
+    pub fn is_stalemate(&self) -> bool {
         if self.is_check().is_some() {
             return false;
         }
@@ -400,6 +410,7 @@ pub struct Piece {
     color: Color,
     piece_type: PieceType,
     position: Position,
+    num_moves: u32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

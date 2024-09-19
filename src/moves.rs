@@ -49,6 +49,11 @@ pub fn get_move_type(game: &Game, piece: Piece, position: Position) -> MoveType 
         }
     }
 
+    // Castling (king moved 2 squares <=> castling)
+    if piece.piece_type == PieceType::King && (piece.position - position).x.abs() == 2 {
+        return MoveType::Castling;
+    }
+
     match game.color_at(position) {
         Some(color) => {
             if color != piece.color {
@@ -117,8 +122,9 @@ fn get_pawn_moves(game: &Game, piece: Piece) -> Moves {
         moves.push(right);
     }
 
-    let initial_move = (piece.position.y == 1 && piece.color == Color::White)
-        || (piece.position.y == 6 && piece.color == Color::Black);
+    /* let initial_move = (piece.position.y == 1 && piece.color == Color::White)
+    || (piece.position.y == 6 && piece.color == Color::Black); */
+    let initial_move = piece.num_moves == 0;
 
     // Double step forward
     // FIX: Bug here where player can capture own pieces at double step forward
@@ -192,8 +198,6 @@ fn get_rook_moves(game: &Game, piece: Piece) -> Moves {
     moves.append(&mut get_moves_direction(game, piece, (-1, 0).into()));
     moves.append(&mut get_moves_direction(game, piece, (0, -1).into()));
 
-    // TODO: Castling
-
     moves
 }
 
@@ -225,6 +229,80 @@ fn get_king_moves(game: &Game, piece: Piece) -> Moves {
     push_if_valid_attack(&mut moves, game, piece, (-1, 1).into());
     push_if_valid_attack(&mut moves, game, piece, (1, -1).into());
     push_if_valid_attack(&mut moves, game, piece, (-1, -1).into());
+
+    // Time for castling :skull:
+    // Makes the most sense to define castling as a kings move
+    // If you dont agree im sorry but you're wrong
+    // PS: dont read any of the code below it is absolutely horrendous
+
+    // Currently causes stack overflow :skull:
+    /* if game.is_color_checked(piece.color) {
+        return moves;
+    } */
+
+    let pieces = game.get_pieces();
+    let king = pieces
+        .iter()
+        .find(|piece2| piece2.color == piece.color && piece2.num_moves == 0)
+        .cloned();
+
+    if king.is_none() {
+        // King has moved or something else has gone terribly wrong
+        return moves;
+    }
+
+    let long_rook = pieces
+        .iter()
+        .find(|piece2| {
+            piece2.piece_type == PieceType::Rook
+                && piece2.num_moves == 0
+                && piece2.position.x == 0
+                && piece2.color == piece.color
+        })
+        .cloned();
+    let short_rook = pieces
+        .iter()
+        .find(|piece2| {
+            piece2.piece_type == PieceType::Rook
+                && piece2.num_moves == 0
+                && piece2.position.x == 7
+                && piece2.color == piece.color
+        })
+        .cloned();
+
+    // Short castling
+    if let Some(rook) = short_rook {
+        if game.color_at(rook.position + (-1, 0)).is_none()
+            && game.color_at(rook.position + (-2, 0)).is_none()
+        {
+            // Squares are not occupied
+            // Make sure the king does not "pass through check"
+
+            if !game.self_check(piece, rook.position + (-1, 0))
+                && !game.self_check(piece, rook.position + (-2, 0))
+            {
+                moves.push(rook.position + (-1, 0));
+            }
+        }
+    }
+
+    // Long castling
+    if let Some(rook) = long_rook {
+        if game.color_at(rook.position + (1, 0)).is_none()
+            && game.color_at(rook.position + (2, 0)).is_none()
+            && game.color_at(rook.position + (3, 0)).is_none()
+        {
+            // Squares are not occupied
+            // Make sure the king does not "pass through check"
+
+            // Here the rook.position + (1, 0) does not matter since the king never passes through it even though the rook does
+            if !game.self_check(piece, rook.position + (2, 0))
+                && !game.self_check(piece, rook.position + (3, 0))
+            {
+                moves.push(rook.position + (2, 0));
+            }
+        }
+    }
 
     moves
 }
