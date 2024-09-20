@@ -1,4 +1,4 @@
-```
+```rust
 use std::{io, str::FromStr};
 
 use valterm_chess::{moves::MoveType, Game, GameStatus, PieceType, Position};
