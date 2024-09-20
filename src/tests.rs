@@ -434,6 +434,10 @@ mod chess_tests {
         game.move_piece((4, 7).into(), (2, 7).into());
         assert!(game.pieces[3][7].is_some_and(|piece| piece.piece_type == PieceType::Rook));
 
+        /* This test case currently overflows the stack because the king cannot castle out of
+        check and so the check check invokes get_pseudo_moves for the opposing king which
+        creates infinite recursion if it can castle */
+        // Fixed, hope this fix has no other unwanted implications
         game.load_fen("r3k2r/8/8/8/8/8/4R2R/4K3");
         game.current_move = Color::Black;
         println!("{:?}", game.get_valid_moves(game.pieces[4][7].unwrap()));

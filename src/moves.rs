@@ -235,11 +235,6 @@ fn get_king_moves(game: &Game, piece: Piece) -> Moves {
     // If you dont agree im sorry but you're wrong
     // PS: dont read any of the code below it is absolutely horrendous
 
-    // Currently causes stack overflow :skull:
-    /* if game.is_color_checked(piece.color) {
-        return moves;
-    } */
-
     let pieces = game.get_pieces();
     let king = pieces
         .iter()
@@ -248,6 +243,13 @@ fn get_king_moves(game: &Game, piece: Piece) -> Moves {
 
     if king.is_none() {
         // King has moved or something else has gone terribly wrong
+        return moves;
+    }
+
+    // Currently causes stack overflow :skull:
+    // Check if king is checked without generating moves for opposing king
+    // The opposing king cannot interfere with the castling anyway
+    if game.is_color_checked_exclude_king(piece.color) {
         return moves;
     }
 

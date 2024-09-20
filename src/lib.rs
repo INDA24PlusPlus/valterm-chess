@@ -172,6 +172,27 @@ impl Game {
         false
     }
 
+    fn is_color_checked_exclude_king(&self, color: Color) -> bool {
+        let pieces = self.get_pieces();
+        let king = *pieces
+            .iter()
+            .find(|piece| piece.color == color && piece.piece_type == PieceType::King)
+            .unwrap();
+
+        for piece in pieces {
+            if piece.color != color
+                && piece.piece_type != PieceType::King
+                && get_pseudo_moves(self, piece)
+                    .iter()
+                    .any(|position| *position == king.position)
+            {
+                return true;
+            }
+        }
+
+        false
+    }
+
     /// Returns the color of the currently checked player, None if no player is checked
     /// Will panic if any king is missing, please dont call if there is no king :(
     pub fn is_check(&self) -> Option<Color> {
