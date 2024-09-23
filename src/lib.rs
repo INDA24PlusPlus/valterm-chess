@@ -428,10 +428,10 @@ impl Game {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Piece {
-    color: Color,
-    piece_type: PieceType,
-    position: Position,
-    num_moves: u32,
+    pub color: Color,
+    pub piece_type: PieceType,
+    pub position: Position,
+    pub num_moves: u32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
